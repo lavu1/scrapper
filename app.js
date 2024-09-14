@@ -351,7 +351,7 @@ app.get('/scrape-jobs', async (req, res) => {
 
     } catch (error) {
         console.error('Error in /scrape-jobs:', error);
-        res.status(500).send('An error occurred');
+        res.status(500).send('An error occurred', error);
         
     } finally {
         if (browser) {
