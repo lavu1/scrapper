@@ -11,11 +11,18 @@ const app = express();
 const facebook = express();
 const PORT = 3000;
 
-const pool = mysql.createPool({
-    host: 'localhost',  // Replace with your database host
-    user: 'root',       // Replace with your MySQL username
-    password: '1234567890',  // Replace with your MySQL password
-    database: 'artms',  // Replace with your database name
+// const pool = mysql.createPool({
+//     host: 'localhost',  // Replace with your database host
+//     user: 'root',       // Replace with your MySQL username
+//     password: '1234567890',  // Replace with your MySQL password
+//     database: 'artms',  // Replace with your database name
+//   });
+
+  const pool = mysql.createPool({
+    host: '127.0.0.1',  // Replace with your database host
+    user: 'lavufirst',       // Replace with your MySQL username
+    password: 'exZW3jJdGPBhsfQGPMF9',  // Replace with your MySQL password
+    database: 'zedinstablod',  // Replace with your database name
   });
 function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
@@ -355,7 +362,7 @@ app.get('/scrape-jobs', async (req, res) => {
 });
 
 
-cron.schedule('*/5 * * * *', async () => { // Run every 10 minutes
+cron.schedule('*/10 * * * *', async () => { // Run every 10 minutes
     try {
         const response = await axios.get(`http://localhost:${PORT}/scrape-jobs`);
         console.log('Scheduled job triggered', response.data);
