@@ -1,0 +1,32 @@
+{
+  "name": "alphil-notification-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-site self-hosted Web Push and email notification platform",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "worker": "node src/worker.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed-tenants.js",
+    "test-email": "node scripts/send-test-email.js",
+    "test-isolation": "node scripts/test-failure-isolation.js",
+    "test": "node --test 'test/*.test.js'"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "helmet": "^8.1.0",
+    "mysql2": "^3.14.3",
+    "nodemailer": "^9.0.3",
+    "ua-parser-js": "^2.0.4",
+    "web-push": "^3.6.7",
+    "zod": "^4.0.10"
+  }
+}

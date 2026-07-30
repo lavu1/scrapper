@@ -1,0 +1,23 @@
+[Unit]
+Description=Alphil Notification Platform API
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=notification-platform
+Group=notification-platform
+WorkingDirectory=/opt/notification-platform
+EnvironmentFile=/etc/notification-platform.env
+ExecStart=/usr/bin/node /opt/notification-platform/src/server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/notification-platform
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+[Unit]
+Description=ZinstaBlog Laravel queue worker
+After=network-online.target mariadb.service redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/zinstablog.com/public_html
+ExecStart=/usr/bin/php artisan queue:work database --sleep=3 --tries=4 --timeout=120 --max-time=3600 --no-interaction
+ExecReload=/usr/bin/php artisan queue:restart
+Restart=always
+RestartSec=5
+TimeoutStopSec=180
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
