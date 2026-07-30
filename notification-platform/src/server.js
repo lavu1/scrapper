@@ -217,7 +217,15 @@ app.get('/v1/email/:publicId/verify', asyncRoute(async (request, response) => {
   response.send(messagePage('Email alerts confirmed', 'Your notification preferences are now active.'));
 }));
 
-app.all('/v1/email/:id/unsubscribe', asyncRoute(async (request, response) => {
+app.get('/v1/email/:id/unsubscribe', asyncRoute(async (request, response) => {
+  const value = `${request.params.id}:unsubscribe`;
+  if (verifySignedToken(String(request.query.token || '')) !== value) {
+    return response.status(400).send(messagePage('Invalid unsubscribe link', 'This unsubscribe link is no longer valid.'));
+  }
+  response.send(unsubscribePage(request.params.id, String(request.query.token)));
+}));
+
+app.post('/v1/email/:id/unsubscribe', asyncRoute(async (request, response) => {
   const value = `${request.params.id}:unsubscribe`;
   if (verifySignedToken(String(request.query.token || request.body.token || '')) !== value) {
     return response.status(400).send(messagePage('Invalid unsubscribe link', 'This unsubscribe link is no longer valid.'));
@@ -227,6 +235,35 @@ app.all('/v1/email/:id/unsubscribe', asyncRoute(async (request, response) => {
     [request.params.id],
   );
   response.send(messagePage('You are unsubscribed', 'You will no longer receive email alerts from this site.'));
+}));
+
+app.all('/v1/email/:id/preferences', asyncRoute(async (request, response) => {
+  const value = `${request.params.id}:preferences`;
+  const token = String(request.query.token || request.body.token || '');
+  if (verifySignedToken(token) !== value) {
+    return response.status(400).send(messagePage('Invalid preferences link', 'This preferences link is no longer valid.'));
+  }
+  const [rows] = await db.execute(
+    `SELECT e.*, t.name tenant_name, t.domain FROM email_subscriptions e
+     JOIN tenants t ON t.id = e.tenant_id WHERE e.id = ? LIMIT 1`,
+    [request.params.id],
+  );
+  const subscription = rows[0];
+  if (!subscription) return response.status(404).send(messagePage('Subscription not found', 'This email subscription no longer exists.'));
+
+  if (request.method === 'POST') {
+    const allowedFrequencies = new Set(['immediate', 'daily', 'weekly']);
+    const frequency = allowedFrequencies.has(request.body.frequency) ? request.body.frequency : 'immediate';
+    const updatedFilters = {};
+    for (const key of ['keyword', 'location', 'jobType', 'category']) {
+      const item = String(request.body[key] || '').trim().slice(0, 255);
+      if (item) updatedFilters[key] = item;
+    }
+    await db.execute('UPDATE email_subscriptions SET filters = ?, frequency = ? WHERE id = ?', [JSON.stringify(updatedFilters), frequency, subscription.id]);
+    subscription.filters = updatedFilters;
+    subscription.frequency = frequency;
+  }
+  response.send(preferencesPage(subscription, token, request.method === 'POST'));
 }));
 
 app.post('/v1/internal/email-subscriptions/sync', asyncRoute(async (request, response) => {
@@ -481,6 +518,20 @@ function escapeHtml(value) {
 
 function messagePage(title, message) {
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title></head><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;"><main style="max-width:560px;margin:80px auto;padding:30px;background:#fff;border:1px solid #dbe3ef;border-radius:12px;"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p></main></body></html>`;
+}
+
+function unsubscribePage(id, token) {
+  const action = `${config.publicBaseUrl}/v1/email/${encodeURIComponent(id)}/unsubscribe?token=${encodeURIComponent(token)}`;
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribe</title></head><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;"><main style="max-width:560px;margin:80px auto;padding:30px;background:#fff;border:1px solid #dbe3ef;border-radius:12px;"><h1>Unsubscribe from email alerts?</h1><p>You will stop receiving matching notification emails from this website.</p><form method="post" action="${escapeHtml(action)}"><button style="border:0;border-radius:8px;background:#b91c1c;color:#fff;padding:12px 18px;font-weight:700;cursor:pointer;">Confirm unsubscribe</button></form></main></body></html>`;
+}
+
+function preferencesPage(subscription, token, saved) {
+  const filters = json(subscription.filters, {});
+  const action = `${config.publicBaseUrl}/v1/email/${encodeURIComponent(subscription.id)}/preferences?token=${encodeURIComponent(token)}`;
+  const unsubscribe = `${config.publicBaseUrl}/v1/email/${encodeURIComponent(subscription.id)}/unsubscribe?token=${encodeURIComponent(signedToken(`${subscription.id}:unsubscribe`))}`;
+  const option = (value, label) => `<option value="${value}" ${subscription.frequency === value ? 'selected' : ''}>${label}</option>`;
+  const field = (name, label) => `<label>${label}<input name="${name}" maxlength="255" value="${escapeHtml(Array.isArray(filters[name]) ? filters[name].join(', ') : filters[name] || '')}"></label>`;
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Notification preferences</title></head><body style="margin:0;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;"><main style="max-width:560px;margin:50px auto;padding:30px;background:#fff;border:1px solid #dbe3ef;border-radius:12px;"><h1>${escapeHtml(subscription.tenant_name)} preferences</h1>${saved ? '<p style="padding:10px;border-radius:7px;background:#dcfce7;color:#166534;">Your preferences were saved.</p>' : ''}<p>${escapeHtml(subscription.email)}</p><form method="post" action="${escapeHtml(action)}" style="display:grid;gap:13px;"><input type="hidden" name="token" value="${escapeHtml(token)}"><label>Frequency<select name="frequency">${option('immediate', 'Immediately')}${option('daily', 'Daily digest')}${option('weekly', 'Weekly digest')}</select></label>${field('keyword', 'Keywords')}${field('location', 'Location')}${field('jobType', 'Job type')}${field('category', 'Category')}<button style="border:0;border-radius:8px;background:#2563eb;color:#fff;padding:12px;font-weight:700;cursor:pointer;">Save preferences</button></form><p style="margin-top:24px;"><a href="${escapeHtml(unsubscribe)}" style="color:#b91c1c;">Unsubscribe from all email alerts</a></p><style>label{display:grid;gap:5px;font-weight:700}input,select{box-sizing:border-box;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}</style></main></body></html>`;
 }
 
 function count(stats, status) {

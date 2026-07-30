@@ -20,3 +20,8 @@ export function unsubscribeUrl(delivery) {
   const value = `${delivery.email_subscription_id}:unsubscribe`;
   return `${config.publicBaseUrl}/v1/email/${delivery.email_subscription_id}/unsubscribe?token=${encodeURIComponent(signedToken(value))}`;
 }
+
+export function preferencesUrl(delivery) {
+  const value = `${delivery.email_subscription_id}:preferences`;
+  return `${config.publicBaseUrl}/v1/email/${delivery.email_subscription_id}/preferences?token=${encodeURIComponent(signedToken(value))}`;
+}

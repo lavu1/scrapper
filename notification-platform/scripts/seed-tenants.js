@@ -8,7 +8,7 @@ const defaults = [
     key: 'zambia-job-alerts',
     name: 'Zambia Job Alerts',
     domain: 'zambiajobalerts.com',
-    logoUrl: 'https://zambiajobalerts.com/wp-content/uploads/2024/02/cropped-logo-192x192.png',
+    logoUrl: 'https://zambiajobalerts.com/wp-content/uploads/2025/02/cropped-Gemini_Generated_Image_svsmwosvsmwosvsm-1-192x192.jpeg',
     smtpProfile: 'pja',
     settings: {
       color: '#142b63',

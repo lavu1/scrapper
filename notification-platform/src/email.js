@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { config } from './config.js';
-import { clickUrl, openPixelUrl, unsubscribeUrl } from './tracking.js';
+import { clickUrl, openPixelUrl, preferencesUrl, unsubscribeUrl } from './tracking.js';
 
 const transports = new Map();
 
@@ -71,7 +71,13 @@ export function renderEmail(delivery) {
     settings.androidUrl ? `<a href="${escapeHtml(clickUrl(delivery, settings.androidUrl))}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 13px;border-radius:7px;background:#0f172a;color:#fff;text-decoration:none;font-size:13px;font-weight:700;">Download Android app</a>` : '',
     settings.iosUrl ? `<a href="${escapeHtml(clickUrl(delivery, settings.iosUrl))}" style="display:inline-block;margin:0 0 8px;padding:9px 13px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#0f172a;text-decoration:none;font-size:13px;font-weight:700;">Download iPhone app</a>` : '',
   ].join('');
-  const preferenceUrl = unsubscribeUrl(delivery);
+  const preferenceLink = preferencesUrl(delivery);
+  const websiteUrl = `https://${delivery.domain}`;
+  const socialLinks = [
+    ['Facebook', `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(websiteUrl)}`],
+    ['X', `https://twitter.com/intent/tweet?url=${encodeURIComponent(websiteUrl)}`],
+    ['LinkedIn', `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(websiteUrl)}`],
+  ].map(([label, url]) => `<a href="${escapeHtml(clickUrl(delivery, url))}" style="color:${escapeHtml(color)};text-decoration:none;">${label}</a>`).join(' &nbsp;|&nbsp; ');
 
   return `<!doctype html>
   <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(payload.title)}</title></head>
@@ -87,7 +93,10 @@ export function renderEmail(delivery) {
         ${items.slice(0, 10).map((item) => contentCard(delivery, item, color)).join('')}
         <tr><td style="padding:22px 24px;">${appButtons}</td></tr>
         <tr><td style="padding:18px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;line-height:19px;color:#64748b;">
-          Sent by ${escapeHtml(delivery.tenant_name)}. <a href="${escapeHtml(preferenceUrl)}" style="color:${escapeHtml(color)};">Unsubscribe or update notification preferences</a>.
+          <div style="margin-bottom:8px;">Share: ${socialLinks}</div>
+          &copy; ${new Date().getUTCFullYear()} ${escapeHtml(delivery.tenant_name)}. All rights reserved.<br>
+          <a href="${escapeHtml(clickUrl(delivery, websiteUrl))}" style="color:${escapeHtml(color)};">Visit website</a>
+          &nbsp;|&nbsp; <a href="${escapeHtml(preferenceLink)}" style="color:${escapeHtml(color)};">Notification preferences or unsubscribe</a>
           <img src="${escapeHtml(openPixelUrl(delivery))}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px;">
         </td></tr>
       </table>
