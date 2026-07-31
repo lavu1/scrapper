@@ -190,9 +190,9 @@
                     @if (config('prime.mobile_apps.ios.url'))
                         <a href="{{ config('prime.mobile_apps.ios.url') }}" rel="noopener external" target="_blank">Download the iPhone app</a>
                     @endif
-                    @unless (config('prime.mobile_apps.android.url'))
-                        <span class="text-slate-500">Android app coming soon</span>
-                    @endunless
+                    @if (config('prime.mobile_apps.android.url'))
+                        <a href="{{ config('prime.mobile_apps.android.url') }}" rel="noopener external" target="_blank">Download the Android app</a>
+                    @endif
                     <a href="{{ route('contact') }}">Contact</a>
                     @if (auth()->user()?->is_admin)
                         <a href="{{ route('api-docs') }}">Internal API docs</a>

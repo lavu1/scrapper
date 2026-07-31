@@ -42,6 +42,8 @@ const defaults = [
       color: '#2563eb',
       contentLabel: 'scholarship',
       allowedDomains: ['www.primescholarshipalerts.com'],
+      androidUrl: 'https://play.google.com/store/apps/details?id=com.alphil.networks.gradscholar',
+      iosUrl: 'https://apps.apple.com/us/app/prime-scholarship-alerts/id6788024265',
     },
   },
   {
